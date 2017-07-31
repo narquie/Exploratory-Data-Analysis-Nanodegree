@@ -1,0 +1,414 @@
+---
+title: "Red Wine Quality"
+author: "Nicolas Arquie"
+date: "July 21, 2017"
+output: html_document
+---
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#library(ggplot)
+library(ggplot2)
+library(GGally)
+library(scales)
+library(memisc)
+library(gridExtra)
+library(cowplot)
+library(RColorBrewer)
+library(bitops)
+library(RCurl)
+dfWine = read.csv("wineQualityReds.csv")
+```
+
+I'm using the red wine dataset from Paulo Cortez (Univ. Minho), Antonio Cerdeira, Fernando Almeida, Telmo Matos and Jose Reis (CVRVV) @ 2009. The dataset includes quality of red wines based on experts' tastes and some non-identifying qualities of the wines that help to show which aspects of red wines are correlated to a better quality of wine.
+
+## Univariate Plots
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+histMaker <- function(xaxis,name) {
+  return(ggplot(aes(x = xaxis), data = dfWine) + 
+  geom_histogram(fill = '#5760AB') +
+  xlab(name)+
+  ylab("Count"))
+}
+
+boxUniMaker = function(yaxis, name){
+return(ggplot(dfWine, aes( x = 1, y = yaxis ) ) + 
+               geom_jitter(alpha = 0.1 ) +
+               geom_boxplot(alpha = 0.2, color = 'blue')+
+         ylab(name))
+}
+
+boxBiMaker <- function(yaxis,namey) { 
+  return(ggplot(aes(factor(quality), 
+        yaxis), 
+        data =dfWine) +
+  #scale_y_continuous(trans = log10_trans())+
+  geom_jitter( alpha = .3)  +
+  geom_boxplot( alpha = .5,color = 'blue')+
+  stat_summary(fun.y = "mean", 
+               geom = "point", 
+               color = "red", 
+               shape = 8, 
+               size = 4)+
+  xlab("Quality")+
+  ylab(namey))
+}
+boxMultiMaker = function(fillname, name){
+  return(ggplot(aes(x = factor(quality), y = alcohol), data = dfWine) + 
+   geom_boxplot(aes(fill = fillname))+scale_fill_discrete(name=name) +
+     xlab("Quality")+
+     ylab("Alcohol (% by Volume)"))
+}
+```
+
+Quality
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+summary(dfWine[,c("quality")])
+```
+
+A few details about quality of red wine as judged by wine experts.
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+qualityHist = ggplot(aes(x = quality), data = dfWine) + 
+  geom_histogram(fill = '#5760AB', binwidth = 1) +
+  xlab("Quality")+
+  ylab("Count")
+qualityBox = boxUniMaker(dfWine$quality,'Quality') 
+grid.arrange(qualityHist,qualityBox)
+```
+
+Quality seems to range between 5-7, not much in any other range. Seems like experts don't rate any lower or higher... perhaps the wine quality is decent overall? Or the experts are hesitant to rate too low or too high? The boxplot also shows that ratings of 3 and 8 are rare, from which we could already see in the histogram.
+
+Fixed Acidity
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+summary(dfWine[,c("fixed.acidity")])
+```
+
+Stats on fixed acidity - the amount of overall acidity of the wine that is not volatile.
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+fixedAcidHist = histMaker(dfWine$fixed.acidity,'Fixed Acidity')
+fixedAcidBox = boxUniMaker(dfWine$fixed.acidity,'Fixed Acidity') 
+grid.arrange(fixedAcidHist,fixedAcidBox)
+```
+
+Fixed acidity ranges from around 7 g / dm^3 of tartaric acid to (at the highest) 13 g / dm^3 generally as a whole, with maximum at 16 g / dm^3 highest and possibly 6 g / dm^3 at the minimum. Tartaric acid is supposed to be correlated with the temperature of the location and it might not be too much of a supposition to think that perhaps the vineyards are placed in areas of the same climate on average.
+
+Volatile Acidity
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+summary(dfWine[,c("volatile.acidity")])
+```
+
+Stats for volatile acidity which relates to how much a wine tastes like vinegar.
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+volatileHist = histMaker(dfWine$volatile.acidity,'Volatile Acidity')
+volatileBox = boxUniMaker(dfWine$volatile.acidity,'Volatile Acidity') 
+grid.arrange(volatileHist,volatileBox)
+```
+
+The range of volatile acid ranges in majority from around 0.4 g / dm^3 of acetic acid to around 0.8 g / dm^3 with the maximum range going as high as 1.6 g / dm^3. These ranges are caused by external issues such as exposure to "bugs" that can cause a higher concentration of volatile acidity. For the most part, it seems that these bugs are under control for a decent range of the red wines.
+
+Citric Acid
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+summary(dfWine[,c("citric.acid")])
+```
+
+The stats for citric acid, which is the main acid found in fruits such as oranges and lemons.
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+citricHist = histMaker(dfWine$citric.acid,'Citric Acidity')
+citricBox = boxUniMaker(dfWine$citric.acid,'Citric Acidity') 
+grid.arrange(citricHist,citricBox)
+```
+
+There seems to be more of a variance in citric acidity (ranges of 0.125 g / dm^3 to less than 0.5 g / dm^3) than in any of the other variables looked through so far. It is very possible that the range of berries used for these analyses could be varied enough to naturally cause this variation... which would seem probable as the wine experts must be testing quite a ranging degree of red wines and red wine types.
+
+Chlorides
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+summary(dfWine[,c("chlorides")])
+```
+
+Stats of chloride, the amount of salt in the wine.
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+chlorideHist = histMaker(dfWine$chlorides,'Chlorides')
+chlorideBox = boxUniMaker(dfWine$chlorides,'Chlorides') 
+grid.arrange(chlorideHist,chlorideBox)
+```
+
+Seems that chloride (in the area of 0.1 g / dm^3 of sodium chloride) is very well restricted in the wines. This makes sense as the wine experts (and most of the consumers if they are exposed to the same wines as the experts) can very likely taste the salt in the wines, and can taste the variation in one wine as opposed to another which makes it critical to avoid large ranges in wine.
+
+Total Sulfur Dioxide
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+summary(dfWine[,c("total.sulfur.dioxide")])
+```
+
+Stats of total sulfur dioxide, which can have a pungent taste.
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+sulfurHist = histMaker(dfWine$total.sulfur.dioxide,'Total Sulfur Dioxide')
+sulfurBox = boxUniMaker(dfWine$total.sulfur.dioxide,'Total Sulfur Dioxide') 
+grid.arrange(sulfurHist,sulfurBox)
+```
+
+Sulfur dioxide is added to wines for protection against microbial agents and to allow the wine to age for longer periods of time. The lack of variation in the sulfur dioxide's mg / dm^3 (ranging from below 10 mg / dm^3 to more than 100 mg / dm^3) does not seem to have much variance because of the necessary ranges in the wine that are needed to both keep positive effects while not causing adverse effects such as bad taste. There are a few points that are outliers on this graph that I have no explanation for... hopefully the majority of the points outweigh the few outliers that might skew relationships in the analyses to follow.
+
+pH
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+summary(dfWine[,c("pH")])
+```
+
+Stats for pH which is how much like a "base" (opposite of an acid) a wine is. Most wines are acidic, which is why we see the max level is under 4 here (where 7 is neutral).
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+pHHist = histMaker(dfWine$pH,'pH')
+pHBox = boxUniMaker(dfWine$pH,'pH') 
+grid.arrange(pHHist,pHBox)
+```
+
+The pH ranges from between 3.0 to 3.5 which is not very surprising considering wine is primarily made of acids, which means it should range between values lower than 7.0. All the acids that are present in the wine (tartaric, acetic, citric...) all have pH below 4.0, so the 3.0 to 3.5 range of pH for these wines is not out of the ordinary.
+
+Alcohol
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+summary(dfWine[,c("alcohol")])
+```
+
+Level of alcohol in percent by volume.
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+alcHist = histMaker(dfWine$alcohol,'Alcohol')
+alcBox = boxUniMaker(dfWine$alcohol,'Alcohol') 
+grid.arrange(alcHist,alcBox)
+```
+
+Wine, as it is not a spirit, should not have alcohol levels above 20% alcohol by volume as a sample heuristic. The values of around 8% alcohol by volume to 14% alcohol by volume is totally reasonable.
+
+Sugar
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+summary(dfWine[,c("residual.sugar")])
+```
+
+Amount of sugar after fermentation stops.
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+sugarHist = histMaker(dfWine$residual.sugar,'Sugar')
+sugarBox = boxUniMaker(dfWine$residual.sugar,'Sugar') 
+grid.arrange(sugarHist,sugarBox)
+```
+
+Sugar, measured in g / dm^3, seems to have quite a few outliers, perhaps because wines can have a varied array of sugars and certain states have limitations on how much sugar can be added post processing. There seems to be a few sweet wines out there in this dataset, which is odd as red wine usually doesn't have as much sugar as rose or white wine.
+
+
+### What is the structure of your dataset?
+There are 1,599 wines in the dataset with 12 features (fixed.acidity, volatile.acidity, citric.acid, residual.sugar, chorides, free.sulfur.dioxide, total.sulfur.dioxide, density, pH, sulphates, alcohol, quality). All these variables are continuous except for quality which is a categorical variable from 0-10 (though only values 3-8 show up in the dataset).
+
+### What is/are the main feature(s) of interest in your dataset?
+The main feature in the dataset is the quality of the red wines. All of the rest of the exploratory analysis will be focused on this and the relationship between quality and the other variables. 
+
+### What other features in the dataset do you think will help support your investigation into your feature(s) of interest?
+I'll investigate this further with the correlation plot to follow. As it is, I skipped the residual sugar analysis because of its low correlation with quality, and I'll follow up with the other variables that have a higher or lower correlation with quality to find out the approximate effect of the variables on red wine quality.
+
+### Did you create any new variables from existing variables in the dataset?
+I did not create any new variables from existing variables in the dataset. I will, however, be creating factors of existing variables to elaborate on various ranges of other variables in the dataset to create multivariate analyses.
+
+## Bivariate Plots
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+set.seed(123456)
+wine_samp <- dfWine[sample(1:length(dfWine$X), 1000), ]
+ggcorr(wine_samp,label = TRUE)
+```
+
+We are mostly concerned with the quality of the red wine, since the rest of the quantities are less easy to tell how they contribute to the taste - we can see that there is a positive correlation between quality / alcohol level, quality / citric acid level, and quality / fixed acidity. We can also tell that there is a negative correlation between quality / total sulfur level, quality / volatile acidity, and weak negative correlation between quality / pH and quality / chlorides
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+boxBiMaker(dfWine$alcohol,'Alcohol')
+```
+
+For the majority of the plot (quality of 5-7), we can see a strong positive correlation between alcohol content vs. quality. This shouldn't catch us by surprise as the correlation between alcohol and quality is the highest of the pairings between quality and other variables. Interesting that wine experts would find higher quality in red wines with more alcohol - we can't assume that alcohol creates this higher quality, but the amount of positive correlation is striking.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+boxBiMaker(dfWine$citric.acid,'Citric Acid')
+```
+
+Though we should have been prepared for the positive correlation between quality and citric acid, it is still interesting to see how much of a correlation citric acid has with quality. Is it possible that experts have a liking for citric fruits, or is there something else hidden that is causing this relationship?
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+boxBiMaker(dfWine$fixed.acidity,'Fixed Acidity')
+```
+
+Positive correlation between fixed acidity and quality. Small positive correlation between fixed acidity and quality shows up here between values of 5-7 quality. Fixed acidity can add to the "tartness" of the wine which is the same role that citric acid plays in the wine. Seems that there might be a relationship between citric and fixed acidity that we could look into more.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+boxBiMaker(dfWine$total.sulfur.dioxide,'Total Sulfur Dioxide')
+```
+
+Not too much of a suprise here that total sulfur dioxide is correlated with lower values of quality... the bad taste of sulfur dioxide should be negatively correlated with quality and it shows up as such here.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+boxBiMaker(dfWine$volatile.acidity,'Volatile Acidity')
+```
+
+Volatile acidity is what makes the wine taste more like vinegar, so it is not too surprising to see it be negatively correlated with quality. Interesting but not too important that the values of quality 3 and 4 are also part of the negatively correlated aspect of volatile acidity in a graph where the 5's, 6's, and 7's are a much more important part.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+boxBiMaker(dfWine$pH,'pH')
+```
+
+Not much correlation between pH and quality which could be expected, especially after noticing that its correlation metric is around 0. Seems that wine experts don't have any way to detect how acidic a particular wine is, or that the acidity of the wine doesn't matter to the taste, or some other hidden aspect.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+boxBiMaker(dfWine$chlorides,'Chlorides')
+```
+
+Chlorides, like pH, is not very negatively correlated with the quality of wine (though admittedly there is a small negative trend in quality with amount of chloride). This result is surprising to me as I would have thought that saltiness in wine would be a criteria to how bad / good the quality of the wine is. I guess that because the distribution of the chlorides is rather small (in the univariate analysis) there isn't much difference between the saltiness in this collection of wines in the first place.
+
+### Talk about some of the relationships you observed in this part of the investigation. How did the feature(s) of interest vary with other features in the dataset?
+
+There seems to be a strong positive correlation between quality and alcohol, quality and citric acid, and quality and fixed acidity. There also seems to be a negative correlation between quality and total sulfuric acid and quality and volatile acidity.
+
+### Did you observe any interesting relationships between the other features (not the main feature(s) of interest)?
+
+Citric acidity and fixed acidity might be interrelated, which I will go into more depth in multivariate to see if there is any relationship between these two and quality.
+
+### What was the strongest relationship you found?
+
+The strongest relationship I found was between alcohol and quality, where the correlation coefficient between the two is 0.5.
+
+## Multivariate Plots
+In these plots, we are trying to see the relationship between quality, alcohol, and different third variables so we can see if there is a joint correlation between the three. I am using alcohol by volume in these plots as compared to another variable because of the very strong correlation between the quality and alcohol. 
+
+I created a factored level of citric acid within the quantities of (0.2-0.3,0.3-0.4,0.4-0.5, and 0.5-0.6). I created this discrete variable to show distinct changes in the following graph through discrete, distinct values.
+
+I also created factored levels for sulfur dioxide, volatile acid, fixed acidity, and chloride levels.
+
+```{r fig.width =12,echo=FALSE, message=FALSE, warning=FALSE}
+## Creating a discrete value for citric acid
+dfWine$fixedDisc = cut(dfWine$fixed.acidity,c(6,8,10,12))
+boxMultiMaker(dfWine$fixedDisc,"Fixed Acidity")
+```
+
+Not much of a relationship between fixed acidity and alcohol / quality. Though fixed acidity is only minorly correlated with both quality and alcohol, I would've thought that there would be a more visible relationship on the graph as a whole.
+
+```{r fig.width =12,echo=FALSE, message=FALSE, warning=FALSE}
+## Creating a discrete value for citric acid
+dfWine$citricDisc = cut(dfWine$citric.acid,c(0.2,0.3,0.4,0.5,0.6))
+boxMultiMaker(dfWine$citricDisc,"Citric Acid")
+```
+
+Not much indication of the positive correlation between citric acid and alcohol. The trends that are visible are not clear from one step up in quality and the relationship between alcohol and citric acid.
+
+```{r fig.width =12,echo=FALSE, message=FALSE, warning=FALSE}
+## Creating a discrete value for citric acid
+dfWine$sulfurDisc = cut(dfWine$total.sulfur.dioxide,c(0,20,40,60,80))
+boxMultiMaker(dfWine$sulfurDisc,"Total Sulfur Dioxide")
+```
+
+Weak relationship between alcohol, quality, and total sulfur dioxide. There is little representation that there is a negative relationship between total sulfur dioxide and alcohol / quality, but not enough to say for certain. 
+
+```{r fig.width =12,echo=FALSE, message=FALSE, warning=FALSE}
+## Creating a discrete value for volatile acidity
+dfWine$volAcidDisc = cut(dfWine$volatile.acidity,c(0.2,0.4,0.6,0.8))
+boxMultiMaker(dfWine$volAcidDisc,"Volatile Acidity")
+```
+
+There is a bit of a negative trend that we can see on a quality of 6, but overall there is not much to be said between the relationship of alcohol and volatile acidity to be able to make reasonable guesses about the interaction between variables.
+
+```{r fig.width =12,echo=FALSE, message=FALSE, warning=FALSE}
+## Creating a discrete value for chlorides
+dfWine$chlorDisc = cut(dfWine$chlorides,c(.04,.06,.08,.10,.12))
+boxMultiMaker(dfWine$chlorDisc,"Chlorides")
+```
+
+We can almost see a negative correlation between chlorides and alcohol / quality, but the factor level of .1-.12 is a little off when describing the system as a whole. If we were to ignore that level of chlorides, then there would be a clear relationship between the three variables.
+
+```{r fig.width =12,echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(x = factor(quality), y = fixed.acidity), data = subset(dfWine, !(is.na(citricDisc)))) + 
+   geom_boxplot(aes(fill = citricDisc))+scale_fill_discrete(name="Citric Acid") +
+     xlab("Quality")+
+     ylab("Fixed Acidity")
+```
+
+After finding out more about fixed acidity and citric acid, there seemed to be a clear anecdotal relationship between the two (as they both contribute to a tart flavor). That relationship can be clearly shown here, where citric acidity is positively correlated with fixed acidity and fixed acidity is positively correlated with quality.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+m1 <- lm(quality ~ alcohol, data = dfWine)
+#m2 <- update(m1, ~ . + citric.acid)
+m2 <- update(m1, ~ . + volatile.acidity)
+#m4 <- update(m3, ~ . + residual.sugar)
+m3 <- update(m2, ~ . + fixed.acidity)
+m4 <- update(m3, ~ . + total.sulfur.dioxide)
+m5 <- update(m4, ~ . + citricDisc)
+m6 <- update(m5, ~ . + citric.acid)
+suppressMessages(library(lattice))
+suppressMessages(library(MASS))
+suppressMessages(library(memisc))
+mtable(m1, m2, m3, m4,m5,m6)
+```
+
+As we can see, volatile acidity, fixed acidity, total sulfur dioxide, and citric acid are good predictors of quality based on wine experts, but they are not too strong of predictors and there is still a strong error term present as the intercept is not the mean quality value. In the report from the creators of the dataset, support vector machines are better predictors of wine quality and sadly we will not be going into much detail on them here.
+
+### Talk about some of the relationships you observed in this part of the investigation. Were there features that strengthened each other in terms of looking at your feature(s) of interest?
+
+There weren't that many factors that were highly related to each other when compared with quality, other than citric acid and fixed acidity, which was a bit of a let down. It seems that the other factors were not as highly interrelated with each other as I thought, or perhaps there was a certain graph that I missed that would have elucidated the relationship between these features.
+
+### Were there any interesting or surprising interactions between features?
+
+The fact that there were such little relationships between variables was interesting in and of itself. Volatile acidity, citric acidity, fixed acidity, and total sulfur dioxide all didn't have that high of correlation with both quality and alcohol.
+
+
+### OPTIONAL: Did you create any models with your dataset? Discuss the strengths and limitations of your model.
+
+I did create a model for my dataset, but the error term in the model accounts for 2 points of quality in the average value which means that there is still a lot that my model does not consider. I was, however, able to distinguish 5 variables that have statistically signficant effects on quality no matter how strong their effect was on the changes in quality itself.
+
+## Final Plots
+
+### Plot 1
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(factor(quality), 
+        alcohol), 
+        data =dfWine) +
+  #scale_y_continuous(trans = log10_trans())+
+  geom_jitter( alpha = .3)  +
+  geom_boxplot( alpha = .5,color = 'blue')+
+  stat_summary(fun.y = "mean", 
+               geom = "point", 
+               color = "red", 
+               shape = 8, 
+               size = 4)+
+  xlab("Quality")+
+  ylab('Alcohol (% by Volume)')+labs(title = "Alcohol by Quality")          
+```
+
+The alcohol level by volume has a high positive correlation with the quality of the wine from the quality values of 5-8. The majority of the quality values are in 5-7, so having 8 be positively correlated as well is just icing on the cake for this correlation of 0.5 between alcohol by volume and quality.
+
+### Plot 2
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(factor(quality), 
+        volatile.acidity), 
+        data =dfWine) +
+  #scale_y_continuous(trans = log10_trans())+
+  geom_jitter( alpha = .3)  +
+  geom_boxplot( alpha = .5,color = 'blue')+
+  stat_summary(fun.y = "mean", 
+               geom = "point", 
+               color = "red", 
+               shape = 8, 
+               size = 4)+
+  xlab("Quality")+
+  ylab('Volatile Acidity (Acetic Acid - g / dm^3)')+labs(title = "Volatile Acidity by Quality")
+```
+
+Acetic acid is negatively correlated with quality across the values of quality as deemed by wine experts. Voaltile acidity is what makes wine taste more like vinegar, which is a possible reason why having more volatile acid is correlated with a drop in quality. Wine experts possibly have refined tastes to be able to detect if a wine tastes more or less like vinegar.
+
+### Plot 3
+```{r fig.width =12,echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(x = factor(quality), y = fixed.acidity), data = subset(dfWine,!(is.na(citricDisc)))) + 
+   geom_boxplot(aes(fill = citricDisc))+scale_fill_discrete(name="Citric Acid (g / dm^3)") +
+     xlab("Quality")+
+     ylab("Fixed Acidity (Tartaric Acid - g / dm^3)")+labs(title = "Fixed Acidity by Quality / Citric Acid")
+```
+
+Positive correlation between fixed acidity, citric acid, and quality. This relationship might be possible through the tart taste of both tartaric acid and citric acid, making the two variables very closely interrelated. It could very well be that both of them contribute to the same sort of flavor that is correlated with what experts deem higher quality wines.
+
+## Reflection
+Across the dataset there are many different variables that could effect the quality of red wine via the ratings of experts. After digging a little deeper, there seems to be high positive correlations between quality of red wine and alcohol level, low positive correlation between red wine and citric acid, high negative correlation between red wine and volatile acid, and low negative correlation between red wine and chlorides.
+
+After doing a deeper analysis on all of the above mentioned variables, we can actually see that alcohol seems to have the strongest positive correlation and volatile acid has the strongest negative correlation on red wines than the other variables, whereas the other variables do not have a strong statistically significant effect on the quality of red wines. This is supported by the multivariate graphs towards the end which do not show a strong relationship between quality / alcohol level and the third variable(s), where quality and alcohol are two of the most highly related variables in this dataset.
+
+I struggled in the analysis of multivariate plots, as most of the variables that I added did not have a clear relationship between quality and alcohol levels. This was the most frustrating part, as the multivariate analysis only had one real take away - that citric acid and fixed acidity are highly correlated with each other and quality. The relationship between citric acid and fixed acidity, along with the bivariate analyses that clearly showed correlation between themselves and quality, were the successes of the analysis as they showed the most information.
+
+One thing that could be added to make the analysis stronger would be to implement a support vector machine to create tighter boundaries across variables and make the modeling more robust. There is still a suitable amount of error term in the model so far, and the creators of the dataset mentioned that they used SVM's to improve their own analysis. 

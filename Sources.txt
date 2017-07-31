@@ -1,0 +1,6 @@
+Used for univariate analysis:
+
+http://www.calwineries.com/learn/wine-chemistry/wine-acids/tartaric-acid - Fixed Acidity
+https://winemakermag.com/676-the-perils-of-volatile-acidity - Volatile Acidity
+http://www.aromadictionary.com/articles/sulfurdioxide_article.html - Total Sulfur Dioxide
+https://www.nytimes.com/2017/05/26/well/eat/how-much-sugar-is-in-a-glass-of-wine.html - residual.sugar
